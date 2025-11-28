@@ -1,0 +1,8 @@
+1. Before uploading image name will change with one unique name and same image can upload again and again by changing the name.
+2. get api for gallery section. 
+3. how to delete particular image or a complete gallery. 
+
+
+
+seperate the image conveter section in the helper section
+seperate the multer upload secion in the middleware function

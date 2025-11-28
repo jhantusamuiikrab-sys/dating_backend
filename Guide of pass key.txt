@@ -1,0 +1,63 @@
+How the "Remember this device" works in this design
+
+When the user authenticates and chooses to be remembered, backend issues:
+
+short-lived access_token cookie (HttpOnly),
+
+long-lived refresh_token cookie (HttpOnly) tied to a deviceId and stored in DB for that user.
+
+On subsequent visits:
+
+Frontend tries /api/me — if access token expired, it calls /api/refresh which uses the refresh token cookie to re-issue an access token.
+
+Because the refresh token is tied to that device (DB record exists), the user is "remembered".
+
+If the user logs out from that device, the refresh token record is removed and the cookies cleared — that device will no longer be auto-logged-in.
+
+This is safer than just setting a persistent non-HttpOnly cookie because refresh tokens are stored server-side and can be revoked per-device.
+
+Production recommendations / hardening (must do before public deployment)
+
+Use HTTPS only and set cookie secure: true. (In code we default to secure only when NODE_ENV === "production".)
+
+Use strong random secrets for JWT_ACCESS_SECRET and JWT_REFRESH_SECRET. Rotate if compromised.
+
+Set proper RP ID & origins (e.g., rpID = yourdomain.com, ORIGIN = https://yourdomain.com) — WebAuthn relies on exact origins.
+
+Store credential fields carefully — store credentialPublicKey and counter. If you migrate DB, be careful with encoding (base64 vs binary).
+
+Rate limit / throttling endpoints to avoid abuse.
+
+CSRF protection: since we use cookies, add CSRF tokens or ensure same-site policy and client-origin checking. sameSite: "lax" helps; consider stronger CSRF measures for sensitive flows.
+
+Use separate storage for ephemeral challenges (Redis or other) for horizontal scaling instead of saving tempChallenge on user doc.
+
+Logging & monitoring: audit authentication events and token revocations.
+
+MFA / device naming: optionally store device name or last-used IP/user-agent for management UI where users can revoke remembered devices.
+
+Use strong attestationType policies if you need to restrict authenticators (enterprise security).
+
+Run locally (quick steps)
+
+Start MongoDB (e.g., mongod on default port).
+
+Backend:
+
+cd backend
+
+create .env based on .env.example
+
+npm install
+
+npm run dev (or npm start)
+
+Frontend:
+
+cd frontend
+
+npm install
+
+npm run dev (Vite default http://localhost:5173)
+
+Open http://localhost:5173 and test register → login → close tab → reopen to see "remember device" auto refresh behavior.
