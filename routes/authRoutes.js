@@ -9,7 +9,7 @@ import { fetchUser } from "../controllers/userOparationController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import {
   singleUploadMiddleware,
-} from "../helper/uploadImageController.js";
+} from "../utils/uploadImageController.js";
 
 
 const router = express.Router();

@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
-import userOperationRoutes from "./routes/userOperationRoutes.js";
+import albumRoutes from "./routes/albumRoutes.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/v1", userOperationRoutes);
+app.use("/api/v1",albumRoutes);
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))

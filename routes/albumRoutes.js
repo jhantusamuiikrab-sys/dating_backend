@@ -1,6 +1,6 @@
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
-import { createAlbum, deleteBatch, deleteImage, getAlbum, updateAlbumName, updateImage } from "../controllers/userOparationController.js";
+import { createAlbum, deleteBatch, deleteImage, getAlbum, updateAlbumName, updateImage } from "../controllers/albumController.js";
 import upload from "../middleware/multerUpload.js";
 
 const router = express.Router();

@@ -18,12 +18,12 @@ seperate the multer upload secion in the middleware function
 5.delete album
 7.delete any single images on that album
 
-8.every place I did batchTitle I have to change it albumTitle and albumName
+8. every place I did batchTitle I have to change it albumTitle and albumName
 9. change the name in the api also
 10. have to create a seperate route for album
 11. in postman also have to create a seperate folder have to seperate the route as it easily accassable
 12. transper code from helper function to utils function
 13. have to upload code on github
-14. have to delete unnecessary packages like crypto that not make sense
-15. 
+14. have to delete unnecessary packages like crypto that has not make any sense
+15. to remove the upload image controller we have to do the necessary changes
 
