@@ -17,12 +17,13 @@ const generateDateFilename = () => {
 };
 
 export const convertToWebp = async (fileBuffer, destinationFolder) => {
-  const fileName = generateDateFilename();
+  const fileName = `${Date.now()}${Math.random()
+    .toString(36)
+    .substring(2, 8)}.webp`;
+
   const savePath = path.join(destinationFolder, fileName);
 
-  const webpBuffer = await sharp(fileBuffer)
-    .webp({ quality: 80 })
-    .toBuffer();
+  const webpBuffer = await sharp(fileBuffer).webp({ quality: 80 }).toBuffer();
 
   fs.writeFileSync(savePath, webpBuffer);
 

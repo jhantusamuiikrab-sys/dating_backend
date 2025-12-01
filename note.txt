@@ -6,3 +6,24 @@
 
 seperate the image conveter section in the helper section
 seperate the multer upload secion in the middleware function
+
+
+
+
+01/12/2025
+1.if 2 many file uploaded then send proper response
+2.if i'm uploading 5 image at the same time then 5 image got the same name but image name should be different
+3.update single images
+4.update album name
+5.delete album
+7.delete any single images on that album
+
+8.every place I did batchTitle I have to change it albumTitle and albumName
+9. change the name in the api also
+10. have to create a seperate route for album
+11. in postman also have to create a seperate folder have to seperate the route as it easily accassable
+12. transper code from helper function to utils function
+13. have to upload code on github
+14. have to delete unnecessary packages like crypto that not make sense
+15. 
+
