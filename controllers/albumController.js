@@ -26,7 +26,7 @@ export const createAlbum = async (req, res) => {
     // Convert and save each file as webp using helper
     for (const file of uploadedFiles) {
       const savePath = await convertToWebp(file.buffer, folderPath);
-      const correctSavePath = savePath.replace(/\\/g, "/");
+      const correctSavePath = savePath;
       newImagePaths.push(correctSavePath);
     }
 

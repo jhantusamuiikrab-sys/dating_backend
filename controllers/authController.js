@@ -1,6 +1,7 @@
 import Userinfo from "../models/Userinfo.js";
 import bcrypt from "bcryptjs"; // You'll likely need this for real registration later
 import jwt from "jsonwebtoken";
+import { convertToWebp } from "../utils/imageConverter.js";
 
 // import { sendMail } from "../utils/mailsend.js"; // Unused in this example
 
@@ -97,19 +98,46 @@ export const updateuser = async (req, res) => {
     } = req.body || {};
 
     const updates = {};
-    if (name !== undefined) {
-      const firstname = name.split(" ")[0]; 
-      const formattedName = firstname.toLowerCase().replace(/[^a-z0-9]/g, ""); 
-      const usernamePrefix = formattedName.slice(0, 2).toUpperCase();
-      const timestamps = Date.now();
-      const newUsername = usernamePrefix + timestamps;
 
-      console.log(`Original Name: ${name}`);
-      console.log(`Username Prefix: ${usernamePrefix}`);
-      console.log(`Final Username: ${newUsername}`);
-      updates.username = `${formattedName}${timestamps}`;
+    // -----------------------------------------------------------------------
+    // 1️⃣ GENERATE USERNAME + PROFILE IMAGE NAME
+    // -----------------------------------------------------------------------
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
     }
+
+    const firstname = name.split(" ")[0];
+    const formatted = firstname.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const prefix = formatted.slice(0, 2).toUpperCase(); // RA, SO, SU etc.
+    const randomNumber = `${Math.random().toString(36).substring(2, 8)}`; // timestamp avoids duplicates
+
+    const finalBaseName = `${prefix}${randomNumber}`; // RA1764158765432
+
+    updates.username = finalBaseName;
     updates.name = name;
+
+    // -----------------------------------------------------------------------
+    // 2️⃣ HANDLE PROFILE IMAGE UPLOAD
+    // -----------------------------------------------------------------------
+    const uploadedFile = req.file; // single file
+
+    if (!uploadedFile) {
+      return res.status(400).json({ message: "Missing profile image" });
+    }
+
+    // Convert to webp and save to folder
+    const savedFileName = await convertToWebp(
+      uploadedFile.buffer,
+      `images/profileImage` // force rename BEFORE converting
+    );
+    // savedFileName will be: RA1764158765432.webp
+
+    // Save into DB
+    updates.ProfilePhoto = savedFileName.replace(/\\/g, "/");
+
+    // -----------------------------------------------------------------------
+    // 3️⃣ UPDATE OTHER FIELDS SAFELY
+    // -----------------------------------------------------------------------
     if (displayName !== undefined) updates.displayName = displayName;
     if (WebsiteName !== undefined) updates.WebsiteName = WebsiteName;
     if (isNameShowOnProfile !== undefined)
@@ -144,40 +172,32 @@ export const updateuser = async (req, res) => {
       updates.iswhatsappnotificationon = iswhatsappnotificationon;
     if (hasloginpin !== undefined) updates.hasloginpin = hasloginpin;
 
-    // 🌟 INTEGRATE FILE UPLOAD 🌟
-    if (req.file) {
-      updates.ProfilePhoto = `${req.file.filename}`;
-    }
-    // 3. Execute the Mongoose Update using the correct Model (Userinfo)
+    // -----------------------------------------------------------------------
+    // 4️⃣ UPDATE DATABASE
+    // -----------------------------------------------------------------------
     const updatedUser = await Userinfo.findByIdAndUpdate(UserId, updates, {
-      new: true, // Return the modified document
-      runValidators: true, // Enforce schema validation
+      new: true,
+      runValidators: true,
     });
 
-    // Handle case where no user is found
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Send the updated document back to the client
-    res.json(updatedUser);
+    return res.json(updatedUser);
   } catch (error) {
-    // Handle validation errors (e.g., trying to set a non-unique username/email) or database issues
     let statusCode = 500;
-    let errorMessage = "Error updating user";
+    let message = "Error updating user";
 
     if (error.name === "ValidationError") {
-      statusCode = 400; // Bad Request
-      errorMessage = error.message;
+      statusCode = 400;
+      message = error.message;
     } else if (error.code === 11000) {
-      // MongoDB duplicate key error (unique constraint violation)
-      statusCode = 409; // Conflict
-      errorMessage = "A user with that username or email already exists.";
+      statusCode = 409;
+      message = "A user with that username or email already exists.";
     }
 
-    res
-      .status(statusCode)
-      .json({ message: errorMessage, error: error.message });
+    return res.status(statusCode).json({ message, error: error.message });
   }
 };
 

@@ -7,21 +7,12 @@ import {
 } from "../controllers/authController.js";
 import { fetchUser } from "../controllers/userOparationController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
-import {
-  singleUploadMiddleware,
-} from "../utils/uploadImageController.js";
-
+import upload from "../middleware/multerUpload.js";
 
 const router = express.Router();
 
 router.post("/register", register);
-router.put(
-  "/update",
-  authMiddleware,
-  singleUploadMiddleware,
-  
-  updateuser
-);
+router.put("/update", upload.single("image"), authMiddleware, updateuser);
 // router.post("/login", authMiddleware, login);
 router.post("/login", login);
 router.get("/profile", authMiddleware, getProfile);
