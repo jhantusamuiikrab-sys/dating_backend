@@ -171,6 +171,7 @@ const UserinfoSchema = new mongoose.Schema(
     CardExpireOn: { type: Date, default: Date.now },
     Lastloginon: { type: Date, default: Date.now },
     MobileOTP: { type: Number },
+    MobileOtpExpire:  { type: Date, default: Date.now + 10 * 60 * 1000}, // 10 min
     isMobVerified: { type: Boolean, default: false },
     EmailOTP: { type: Number },
     isEmailVerified: { type: Boolean, default: false },

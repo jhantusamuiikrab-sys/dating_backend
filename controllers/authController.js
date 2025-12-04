@@ -97,7 +97,6 @@ export const updateuser = async (req, res) => {
     } = req.body || {};
     const uploadedFile = req.file;
     const updates = {};
-
     // Check if the user exists before proceeding with any file operations
     const existingUser = await Userinfo.findById(UserId);
 
@@ -182,7 +181,6 @@ export const updateuser = async (req, res) => {
     if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
     }
-
     return res.json(updatedUser);
   } catch (error) {
     let statusCode = 500;
