@@ -69,7 +69,6 @@ export const updateuser = async (req, res) => {
   try {
     const UserId = req.user.id;
     const {
-      usernamFe,
       displayName,
       WebsiteName,
       name,
@@ -96,48 +95,48 @@ export const updateuser = async (req, res) => {
       iswhatsappnotificationon,
       hasloginpin,
     } = req.body || {};
-
+    const uploadedFile = req.file;
     const updates = {};
 
-    // -----------------------------------------------------------------------
-    // 1️⃣ GENERATE USERNAME + PROFILE IMAGE NAME
-    // -----------------------------------------------------------------------
-    if (!name) {
-      return res.status(400).json({ message: "Name is required" });
+    // Check if the user exists before proceeding with any file operations
+    const existingUser = await Userinfo.findById(UserId);
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const firstname = name.split(" ")[0];
-    const formatted = firstname.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const prefix = formatted.slice(0, 2).toUpperCase(); // RA, SO, SU etc.
-    const randomNumber = `${Math.random().toString(36).substring(2, 8)}`; // timestamp avoids duplicates
+    // GENERATE USERNAME and handle 'name' update (Only if 'name' is provided)
+    if (name) {
+      const firstname = name.split(" ")[0];
+      const formatted = firstname.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const prefix = formatted.slice(0, 2).toUpperCase();
+      const randomNumber = `${Math.random().toString(36).substring(2, 8)}`;
 
-    const finalBaseName = `${prefix}${randomNumber}`; // RA1764158765432
+      const finalBaseName = `${prefix}${randomNumber}`;
 
-    updates.username = finalBaseName;
-    updates.name = name;
-
-    // -----------------------------------------------------------------------
-    // 2️⃣ HANDLE PROFILE IMAGE UPLOAD
-    // -----------------------------------------------------------------------
-    const uploadedFile = req.file; // single file
-
-    if (!uploadedFile) {
-      return res.status(400).json({ message: "Missing profile image" });
+      updates.username = finalBaseName;
+      updates.name = name;
     }
 
-    // Convert to webp and save to folder
-    const savedFileName = await convertToWebp(
-      uploadedFile.buffer,
-      `images/profileImage` // force rename BEFORE converting
-    );
-    // savedFileName will be: RA1764158765432.webp
+    // HANDLE PROFILE IMAGE UPLOAD (Only if a file is uploaded)
+    if (uploadedFile) {
+      // Use the newly generated username if available, otherwise create a random base name
+      let fileBaseName = updates.username;
+      if (!fileBaseName) {
+        const randomNumberForPhoto = `${Math.random()
+          .toString(36)
+          .substring(2, 8)}`;
+        fileBaseName = `IMG${randomNumberForPhoto}`;
+      }
+      
+      const savedFileName = await convertToWebp(
+        uploadedFile.buffer,
+        `images/profileImage/${fileBaseName}`
+      );
+      updates.ProfilePhoto = savedFileName.replace(/\\/g, "/");
+    }
 
-    // Save into DB
-    updates.ProfilePhoto = savedFileName.replace(/\\/g, "/");
-
-    // -----------------------------------------------------------------------
-    // 3️⃣ UPDATE OTHER FIELDS SAFELY
-    // -----------------------------------------------------------------------
+    // UPDATE OTHER FIELDS SAFELY
     if (displayName !== undefined) updates.displayName = displayName;
     if (WebsiteName !== undefined) updates.WebsiteName = WebsiteName;
     if (isNameShowOnProfile !== undefined)
@@ -172,16 +171,16 @@ export const updateuser = async (req, res) => {
       updates.iswhatsappnotificationon = iswhatsappnotificationon;
     if (hasloginpin !== undefined) updates.hasloginpin = hasloginpin;
 
-    // -----------------------------------------------------------------------
-    // 4️⃣ UPDATE DATABASE
-    // -----------------------------------------------------------------------
+    // UPDATE DATABASE
     const updatedUser = await Userinfo.findByIdAndUpdate(UserId, updates, {
       new: true,
       runValidators: true,
     });
 
+    // Note: The final check here is redundant because we checked above, 
+    // but we keep it for robustness against race conditions (though unlikely).
     if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User not found" });
     }
 
     return res.json(updatedUser);
@@ -194,6 +193,8 @@ export const updateuser = async (req, res) => {
       message = error.message;
     } else if (error.code === 11000) {
       statusCode = 409;
+      // This is a common error if the generated username (or another unique field) 
+      // already exists in the database.
       message = "A user with that username or email already exists.";
     }
 
@@ -201,7 +202,7 @@ export const updateuser = async (req, res) => {
   }
 };
 
-// Login user
+// Login  user
 export const login = async (req, res) => {
   try {
     const { phoneno, password } = req.body;
@@ -221,6 +222,7 @@ export const login = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 // Get user profile (Protected)
 export const getProfile = async (req, res) => {
   try {

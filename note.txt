@@ -8,9 +8,7 @@ seperate the image conveter section in the helper section
 seperate the multer upload secion in the middleware function
 
 
-
-
-01/12/2025
+(01-02)/12/2025
 1.if 2 many file uploaded then send proper response
 2.if i'm uploading 5 image at the same time then 5 image got the same name but image name should be different #done
 3.update single images on the album #done
@@ -25,4 +23,12 @@ seperate the multer upload secion in the middleware function
 13. have to upload code on github #done
 14. have to delete unnecessary packages like crypto that has not make any sense #done
 15. to remove the upload image controller we have to do the necessary changes #done
+
+
+
+03/12/2025
+1. token based login
+2. username , mobile no , gmail based login
+3. for username password based login
+4. for mobile no and gmail otp based login
 
