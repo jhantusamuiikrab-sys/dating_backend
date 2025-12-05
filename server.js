@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
 import albumRoutes from "./routes/albumRoutes.js";
+import otpRoutes from "./routes/otpRoutes.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -25,6 +26,8 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/v1",albumRoutes);
+app.use("/api/v2",otpRoutes);
+
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))

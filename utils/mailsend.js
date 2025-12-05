@@ -25,7 +25,6 @@ export const sendMail = async (name, mobileno, email, message) => {
         <p>${message}</p>
       `,
     };
-
     // Send mail
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent:", info.response);

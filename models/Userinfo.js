@@ -170,10 +170,23 @@ const UserinfoSchema = new mongoose.Schema(
     CardValidityInDays: { type: Number },
     CardExpireOn: { type: Date, default: Date.now },
     Lastloginon: { type: Date, default: Date.now },
+    //Mobile otp
     MobileOTP: { type: Number },
-    MobileOtpExpire:  { type: Date, default: Date.now + 10 * 60 * 1000}, // 10 min
+    MobileOtpExpire: {
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60 * 1000),
+    },
+    otpAttemptCount: { type: Number, default: 0 },
+    // lastOtpSentAt: { type: Date },                  // for cooldown (e.g., 60 sec)
     isMobVerified: { type: Boolean, default: false },
+
+    // Email otp
     EmailOTP: { type: Number },
+    MobileOtpExpire: {
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60 * 1000),
+    },
+    otpAttemptCount: { type: Number, default: 0 },
     isEmailVerified: { type: Boolean, default: false },
     iswhatsappenable: { type: Boolean, default: false },
     issmsnotificationon: { type: Boolean, default: false },

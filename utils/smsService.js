@@ -11,7 +11,6 @@ export const sendSMS = async (
   ivrnum,
   ivrid
 ) => {
-  console.log(mobile, RequestType, username);
   try {
     let templateid = null;
     let smsbody = null;

@@ -32,3 +32,7 @@ seperate the multer upload secion in the middleware function
 3. for username password based login
 4. for mobile no and gmail otp based login
 
+
+05/12/2025
+1. Send OTP for email update and verify
+2. if mobile no not change then rest of the process will stop
