@@ -35,4 +35,4 @@ seperate the multer upload secion in the middleware function
 
 05/12/2025
 1. Send OTP for email update and verify
-2. if mobile no not change then rest of the process will stop
+2. if mobile no not change then rest of the process will stop #done
