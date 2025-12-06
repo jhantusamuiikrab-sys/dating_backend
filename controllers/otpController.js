@@ -6,12 +6,19 @@ export const sendOtpForPhoneUpdate = async (req, res) => {
     const { newPhone } = req.body;
     const userId = req.user.id;
     const data = await Userinfo.findById(userId).select(
-      "username otpAttemptCount"
+      "username otpAttemptCount phoneno"
     );
-    const username = data?.username;
     if (!newPhone) {
       return res.status(400).json({ message: "Phone number required" });
     }
+    if (String(data.phoneno).trim() === String(newPhone).trim()) {
+      return res.status(400).json({
+        message: "New phone number is same as current phone. No update needed.",
+      });
+    }
+
+    const username = data?.username;
+
     const currentOtpAttemptCount = data?.otpAttemptCount || 0;
     if (currentOtpAttemptCount >= 5) {
       return res.status(429).json({
@@ -21,10 +28,10 @@ export const sendOtpForPhoneUpdate = async (req, res) => {
     const newOtpAttemptCount = currentOtpAttemptCount + 1;
     const otp = Math.floor(10000 + Math.random() * 90000);
     await Userinfo.findByIdAndUpdate(userId, {
-      phoneno: newPhone,
       MobileOTP: otp,
       MobileOtpExpire: new Date(Date.now() + 10 * 60 * 1000),
       otpAttemptCount: newOtpAttemptCount,
+      phoneno: newPhone,
     });
     await sendSMS(newPhone, "REGISOTP", username, "", otp, "", "");
     return res.json({
