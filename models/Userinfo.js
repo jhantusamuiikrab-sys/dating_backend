@@ -172,17 +172,17 @@ const UserinfoSchema = new mongoose.Schema(
     Lastloginon: { type: Date, default: Date.now },
     //Mobile otp
     MobileOTP: { type: Number },
-    MobileOtpExpire: {
+    MobileOTPValidity: {
       type: Date,
       default: () => new Date(Date.now() + 10 * 60 * 1000),
     },
-    MobileotpAttemptCount: { type: Number, default: 0 },
+    MobileOTPAttempt: { type: Number, default: 1 },
     isMobVerified: { type: Boolean, default: false },
 
     // Email otp
     EmailOTP: { type: Number },
-    EmailOtpExpire: {type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000)},
-    EmailotpAttemptCount: { type: Number, default: 0 },
+    EmailOTPValidity: {type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000)},
+    EmailOTPAttempt: { type: Number, default: 1 },
     isEmailVerified: { type: Boolean, default: false },
 
     iswhatsappenable: { type: Boolean, default: false },

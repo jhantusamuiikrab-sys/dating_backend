@@ -39,4 +39,10 @@ seperate the multer upload secion in the middleware function
 
 
 08/12/2025
-1. Reset password
+1. Reset password #some problem occured during rest password
+
+09/12/2025
+user register with ph no ->  then if we want to update user password then login not need and for login also password not need initally
+page open - ph no- verify- name , pass, email, state city - login 
+if email/ph verify then reset password
+after resgistration process completed then we generate pin

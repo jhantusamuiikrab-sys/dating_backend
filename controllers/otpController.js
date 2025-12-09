@@ -29,7 +29,7 @@ export const sendOtpForPhoneUpdate = async (req, res) => {
     const username = data?.username;
 
     // Use the dedicated Mobile OTP attempt counter
-    const currentOtpAttemptCount = data?.MobileotpAttemptCount || 0; 
+    const currentOtpAttemptCount = data?.MobileOTPAttempt || 0; 
     
     if (currentOtpAttemptCount >= 5) {
       return res.status(429).json({
@@ -43,8 +43,8 @@ export const sendOtpForPhoneUpdate = async (req, res) => {
     
     await Userinfo.findByIdAndUpdate(userId, {
       MobileOTP: otp,
-      MobileOtpExpire: new Date(Date.now() + 10 * 60 * 1000), // OTP expires in 10 minutes
-      MobileotpAttemptCount: newOtpAttemptCount, 
+      MobileOTPValidity: new Date(Date.now() + 10 * 60 * 1000), // OTP expires in 10 minutes
+      MobileOTPAttempt: newOtpAttemptCount, 
       phoneno: newPhone,
     });
     
@@ -83,7 +83,7 @@ export const verifyPhOtp = async (req, res) => {
       {
         isMobVerified: true,
         MobileOTP: null,
-        MobileOtpExpire: null,
+        MobileOTPValidity: null,
       },
       { new: true }
     );
@@ -122,7 +122,7 @@ export const sendOtpForEmailUpdate = async (req, res) => {
       }
     }
     // OTP attempt limit check
-    const currentOtpAttemptCount = data?.EmailotpAttemptCount || 0;
+    const currentOtpAttemptCount = data?.EmailOTPAttempt || 0;
     if (currentOtpAttemptCount >= 5) {
       return res.status(429).json({
         message: "Daily OTP limit exceeded. Try again tomorrow.",
@@ -135,8 +135,8 @@ export const sendOtpForEmailUpdate = async (req, res) => {
     // Update user
     await Userinfo.findByIdAndUpdate(userId, {
       EmailOTP: otp,
-      EmailOtpExpire: new Date(Date.now() + 10 * 60 * 1000),
-      EmailotpAttemptCount: currentOtpAttemptCount + 1,
+      EmailOTPValidity: new Date(Date.now() + 10 * 60 * 1000),
+      EmailOTPAttempt: currentOtpAttemptCount + 1,
       email: newEmail,
       isEmailVerified: false,
     });
@@ -181,7 +181,7 @@ export const verifyEmailOtp = async (req, res) => {
     if (data.EmailOTP !== Number(otp)) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
-    if (data.EmailOtpExpire < new Date()) {
+    if (data.EmailOTPValidity < new Date()) {
       return res.status(400).json({ message: "OTP expired" });
     }
     await Userinfo.findByIdAndUpdate(
@@ -189,7 +189,7 @@ export const verifyEmailOtp = async (req, res) => {
       {
         isEmailVerified: true,
         EmailOTP: null,
-        EmailOtpExpire: null,
+        EmailOTPValidity: null,
       },
       { new: true }
     );

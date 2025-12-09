@@ -67,16 +67,16 @@ export const register = async (req, res) => {
 
 // export const register = async (req, res) => {
 //   try {
-//     const { phoneno, websiteName} = req.body;    
+//     const { phoneno, websiteName} = req.body;
 //     let user = await Userinfo.findOne({ phoneno });
 //     if (user)
 //     {
 //       const Regtoken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-//       res.status(400).json({ Registrationtoken: Regtoken, msg: "User details already exists" });      
+//       res.status(400).json({ Registrationtoken: Regtoken, msg: "User details already exists" });
 //     }
 //     //const salt = await bcrypt.genSalt(10);
 //     //const hashedPassword = await bcrypt.hash(password, salt);
- 
+
 //     let assignedFranId = null; // Default value is null (representing "nan" or unknown)
 //     if (websiteName) {
 //         const adminUser = await AdminUserinfo.findOne({ WebsiteName: websiteName }).select('_id');
@@ -91,14 +91,14 @@ export const register = async (req, res) => {
 //     if (exisuser)
 //     {
 //       const NewRegtoken = jwt.sign({ id: exisuser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-//       res.status(200).json({ Registrationtoken: NewRegtoken, msg: "User details inserted successfully" });      
+//       res.status(200).json({ Registrationtoken: NewRegtoken, msg: "User details inserted successfully" });
 //     }
 //     // const mailSent = await sendMail(name, phoneno, email, message);
 //     // if (mailSent) {
 //     // res.status(201).json({ msg: "User details submitted successfully, we will get back to you shortly" });
 //     // } else {
 //     // res.status(500).json({ msg: "Failed to send mail" });
-//     //}    
+//     //}
 //   } catch (err) {
 //     res.status(500).json({ error: err.message });
 //   }
@@ -166,10 +166,10 @@ export const updateuser = async (req, res) => {
           .substring(2, 8)}`;
         fileBaseName = `IMG${randomNumberForPhoto}`;
       }
-      
+
       const savedFileName = await convertToWebp(
         uploadedFile.buffer,
-        `images/profileImage/${fileBaseName}`
+        `images/profileImage/`
       );
       updates.ProfilePhoto = savedFileName.replace(/\\/g, "/");
     }
@@ -215,10 +215,10 @@ export const updateuser = async (req, res) => {
       runValidators: true,
     });
 
-    // Note: The final check here is redundant because we checked above, 
+    // Note: The final check here is redundant because we checked above,
     // but we keep it for robustness against race conditions (though unlikely).
     if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
     return res.json(updatedUser);
   } catch (error) {
@@ -230,7 +230,7 @@ export const updateuser = async (req, res) => {
       message = error.message;
     } else if (error.code === 11000) {
       statusCode = 409;
-      // This is a common error if the generated username (or another unique field) 
+      // This is a common error if the generated username (or another unique field)
       // already exists in the database.
       message = "A user with that username or email already exists.";
     }
@@ -267,5 +267,65 @@ export const getProfile = async (req, res) => {
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const forgetPassword = async (req, res) => {
+  try {
+    const { email, phoneno } = req.body;
+
+    if (!email && !phoneno) {
+      return res
+        .status(400)
+        .json({ message: "Email or phone number required" });
+    }
+    let user;
+
+    if (email) {
+      user = await Userinfo.findOne({ email });
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: "No account found with this email" });
+      }
+
+      if (!user.isEmailVerified) {
+        return res
+          .status(400)
+          .json({ message: "Please verify your email first" });
+      }
+
+      // send email otp
+      // await sendEmailOtp(user.email);
+
+      return res.status(200).json({ message: "OTP sent to email" });
+    }
+
+    if (phoneno) {
+      user = await Userinfo.findOne({ phoneno });
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: "No account found with this phone number" });
+      }
+
+      if (!user.isMobVerified) {
+        return res
+          .status(400)
+          .json({ message: "Please verify your phone number first" });
+      }
+
+      // send phone otp
+      // await sendPhoneOtp(user.phoneno);
+
+      return res.status(200).json({ message: "OTP sent to phone number" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
