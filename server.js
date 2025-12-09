@@ -6,7 +6,8 @@ import authRoutes from "./routes/authRoutes.js";
 import albumRoutes from "./routes/albumRoutes.js";
 import otpRoutes from "./routes/otpRoutes.js";
 import cookieParser from "cookie-parser";
-
+import "./utils/cornjobs.js";
+ 
 dotenv.config();
 const app = express();
 

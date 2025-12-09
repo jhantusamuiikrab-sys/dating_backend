@@ -65,6 +65,45 @@ export const register = async (req, res) => {
   }
 };
 
+// export const register = async (req, res) => {
+//   try {
+//     const { phoneno, websiteName} = req.body;    
+//     let user = await Userinfo.findOne({ phoneno });
+//     if (user)
+//     {
+//       const Regtoken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+//       res.status(400).json({ Registrationtoken: Regtoken, msg: "User details already exists" });      
+//     }
+//     //const salt = await bcrypt.genSalt(10);
+//     //const hashedPassword = await bcrypt.hash(password, salt);
+ 
+//     let assignedFranId = null; // Default value is null (representing "nan" or unknown)
+//     if (websiteName) {
+//         const adminUser = await AdminUserinfo.findOne({ WebsiteName: websiteName }).select('_id');
+//     if (adminUser) {
+//     // Assign the ObjectId of the found admin user
+//       assignedFranId = adminUser._id;
+//     }
+//   }
+//     user = new Userinfo({ phoneno, franId: assignedFranId, WebsiteName: websiteName});
+//     await user.save();
+//     let exisuser = await Userinfo.findOne({ phoneno });
+//     if (exisuser)
+//     {
+//       const NewRegtoken = jwt.sign({ id: exisuser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+//       res.status(200).json({ Registrationtoken: NewRegtoken, msg: "User details inserted successfully" });      
+//     }
+//     // const mailSent = await sendMail(name, phoneno, email, message);
+//     // if (mailSent) {
+//     // res.status(201).json({ msg: "User details submitted successfully, we will get back to you shortly" });
+//     // } else {
+//     // res.status(500).json({ msg: "Failed to send mail" });
+//     //}    
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 export const updateuser = async (req, res) => {
   try {
     const UserId = req.user.id;

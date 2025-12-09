@@ -176,18 +176,15 @@ const UserinfoSchema = new mongoose.Schema(
       type: Date,
       default: () => new Date(Date.now() + 10 * 60 * 1000),
     },
-    otpAttemptCount: { type: Number, default: 0 },
-    // lastOtpSentAt: { type: Date },                  // for cooldown (e.g., 60 sec)
+    MobileotpAttemptCount: { type: Number, default: 0 },
     isMobVerified: { type: Boolean, default: false },
 
     // Email otp
     EmailOTP: { type: Number },
-    MobileOtpExpire: {
-      type: Date,
-      default: () => new Date(Date.now() + 10 * 60 * 1000),
-    },
-    otpAttemptCount: { type: Number, default: 0 },
+    EmailOtpExpire: {type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000)},
+    EmailotpAttemptCount: { type: Number, default: 0 },
     isEmailVerified: { type: Boolean, default: false },
+
     iswhatsappenable: { type: Boolean, default: false },
     issmsnotificationon: { type: Boolean, default: false },
     iswhatsappnotificationon: { type: Boolean, default: false },
