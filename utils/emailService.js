@@ -7,12 +7,12 @@ export const sendEmail = async ({
   RequestType,
   username,
   otp,
-  password
+  resetLink,
 }) => {
   try {
     let subject = "";
     let html = "";
-
+    console.log(to, RequestType, username, "", resetLink);
     // 🔥 TEMPLATE SELECTION (like SMS switch)
     switch (RequestType.trim().toUpperCase()) {
       case "EMAIL_OTP": {
@@ -24,11 +24,20 @@ export const sendEmail = async ({
         break;
       }
 
-      case "FORGOT_PASSWORD": {
-        subject = "Password Recovery";
+      case "RESET_PASSWORD_LINK": {
+        subject = "Reset Your Password";
         html = `<p>Hello ${username},</p>
-                <p>Your temporary password is: <b>${password}</b></p>
-                <p>Please login and change your password immediately.</p>`;
+                <p>You requested to reset your password.</p>
+                <p>Click the link below to set a new password:</p>
+
+                <a href="${resetLink}" 
+                  style="padding:10px 18px; background:#4CAF50; color:white; 
+                          text-decoration:none; border-radius:5px;">
+                  Reset Password
+                </a>
+
+                <p>This link will expire in 10 minutes.</p>
+                <p>If you did not request this, please ignore this email.</p>`;
         break;
       }
 

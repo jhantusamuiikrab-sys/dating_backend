@@ -1,18 +1,19 @@
 import Userinfo from "../models/Userinfo.js";
-import bcrypt from "bcryptjs"; // You'll likely need this for real registration later
 import jwt from "jsonwebtoken";
 import { convertToWebp } from "../utils/imageConverter.js";
+import { sendEmail } from "../utils/emailService.js";
+import { sendSMS } from "../utils/smsService.js";
+import { decrypt, encrypt } from "../utils/EncryptPassword.js";
 
 // import { sendMail } from "../utils/mailsend.js"; // Unused in this example
 
-// Function to set the JWT in an HTTP-only cookie
 const setTokenCookie = (res, token) => {
-  // Set the cookie with recommended security options
+
   res.cookie("token", token, {
-    httpOnly: true, // 🔑 IMPORTANT: Prevents client-side JavaScript access (XSS defense)
-    secure: false, // Set to true in production (requires HTTPS)
-    maxAge: 3600000, // 1 hour (matching the token expiry) in milliseconds
-    sameSite: "strict", // Recommended for CSRF defense
+    httpOnly: true, 
+    secure: false, 
+    maxAge: 60 * 24 * 60 * 60 * 1000, // 60 days
+    sameSite: "strict",
   });
 };
 
@@ -111,6 +112,8 @@ export const updateuser = async (req, res) => {
       displayName,
       WebsiteName,
       name,
+      email,
+      password,
       isNameShowOnProfile,
       dob,
       gender,
@@ -137,8 +140,8 @@ export const updateuser = async (req, res) => {
     const uploadedFile = req.file;
     const updates = {};
     // Check if the user exists before proceeding with any file operations
-    const existingUser = await Userinfo.findById(UserId);
 
+    const existingUser = await Userinfo.findById(UserId);
     if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -149,16 +152,12 @@ export const updateuser = async (req, res) => {
       const formatted = firstname.toLowerCase().replace(/[^a-z0-9]/g, "");
       const prefix = formatted.slice(0, 2).toUpperCase();
       const randomNumber = `${Math.random().toString(36).substring(2, 8)}`;
-
       const finalBaseName = `${prefix}${randomNumber}`;
-
       updates.username = finalBaseName;
       updates.name = name;
     }
 
-    // HANDLE PROFILE IMAGE UPLOAD (Only if a file is uploaded)
     if (uploadedFile) {
-      // Use the newly generated username if available, otherwise create a random base name
       let fileBaseName = updates.username;
       if (!fileBaseName) {
         const randomNumberForPhoto = `${Math.random()
@@ -166,15 +165,19 @@ export const updateuser = async (req, res) => {
           .substring(2, 8)}`;
         fileBaseName = `IMG${randomNumberForPhoto}`;
       }
-
       const savedFileName = await convertToWebp(
         uploadedFile.buffer,
         `images/profileImage/`
       );
       updates.ProfilePhoto = savedFileName.replace(/\\/g, "/");
     }
-
+    if (password) {
+      const ciphertext = encrypt(password);
+      updates.Password = ciphertext;
+    }
     // UPDATE OTHER FIELDS SAFELY
+    if (email !== undefined) updates.email = email;
+    // if (password !== undefined) updates.Password = password;
     if (displayName !== undefined) updates.displayName = displayName;
     if (WebsiteName !== undefined) updates.WebsiteName = WebsiteName;
     if (isNameShowOnProfile !== undefined)
@@ -239,34 +242,115 @@ export const updateuser = async (req, res) => {
   }
 };
 
-// Login  user
 export const login = async (req, res) => {
   try {
-    const { phoneno, password } = req.body;
-    const user = await Userinfo.findOne({ phoneno });
-    if (!user) return res.status(400).json({ msg: "Invalid credentials" });
-    // const isMatch = await bcrypt.compare(password, user.password);
-    // if (!isMatch) return res.status(400).json({ msg: "Invalid password" });
-    if (password != user.Password) {
-      return res.status(400).json({ msg: "Invalid password" });
+    const { phoneno, password, pin } = req.body;
+
+    // CASE 1: PHONE + PASSWORD LOGIN (FIRST LOGIN)
+
+    if (phoneno && password) {
+      const user = await Userinfo.findOne({ phoneno });
+
+      if (!user) {
+        return res
+          .status(400)
+          .json({ msg: "Invalid credentials || user not found" });
+      }
+
+      const decryptedPassword = decrypt(user.Password);
+
+      if (decryptedPassword !== password) {
+        return res
+          .status(400)
+          .json({ msg: "Invalid password || password not matched" });
+      }
+
+      // Generate device session ID for PIN login
+      const deviceId = crypto.randomUUID();
+      user.deviceId = deviceId;
+      await user.save();
+
+      // Generate 60-day JWT
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "60d",
+      });
+
+      // Set JWT cookie
+      setTokenCookie(res, token);
+
+      // Store deviceId as httpOnly cookie
+      res.cookie("deviceId", deviceId, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict",
+        maxAge:  60 * 24 * 60 * 60 * 1000, // 1 year
+      });
+
+      return res.json({
+        message: "Login successful",
+        token,
+      });
     }
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-    setTokenCookie(res, token);
-    res.json({ token });
+    // CASE 2: PIN LOGIN (COOKIE-BASED DEVICE ID)
+
+    if (pin) {
+      // Read deviceId from cookie instead of header
+      const deviceId = req.cookies.deviceId;
+      if (!deviceId) {
+        return res.status(400).json({
+          msg: "Device not recognized. Login with phone+password first.",
+        });
+      }
+
+      // Find user by deviceId
+      const user = await Userinfo.findOne({ deviceId });
+
+      if (!user) {
+        return res.status(400).json({
+          msg: "Device session invalid. Login again with phone+password.",
+        });
+      }
+
+      // Compare encrypted PIN
+      const decryptedPin = decrypt(user.loginpin);
+
+      if (decryptedPin !== pin) {
+        return res.status(400).json({ msg: "Invalid PIN" });
+      }
+
+      // Issue fresh token (60 days)
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "60d",
+      });
+
+      setTokenCookie(res, token);
+
+      return res.json({
+        message: "PIN login successful",
+        token,
+      });
+    }
+
+    // -------------------------------------------
+    // If no login method matches
+    // -------------------------------------------
+    return res.status(400).json({ msg: "Invalid login request" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// Get user profile (Protected)
-export const getProfile = async (req, res) => {
+export const logout = async (req, res) => {
   try {
-    const user = await Userinfo.findById(req.user.id).select("-password");
-    res.json(user);
+    const userId = req.user?.id; 
+    if (userId) {
+      await Userinfo.findByIdAndUpdate(userId, { $unset: { deviceId: "" } });
+    }
+    res.clearCookie("token"); 
+    res.clearCookie("deviceId");
+    return res.json({ message: "Logout successful" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
@@ -296,10 +380,20 @@ export const forgetPassword = async (req, res) => {
           .json({ message: "Please verify your email first" });
       }
 
-      // send email otp
-      // await sendEmailOtp(user.email);
+      const token = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, {
+        expiresIn: "10m",
+      });
+      const resetLink = `https://yourfrontend.com/resetPassword/${token}`;
 
-      return res.status(200).json({ message: "OTP sent to email" });
+      await sendEmail({
+        to: email,
+        RequestType: "RESET_PASSWORD_LINK",
+        username: user.username,
+        otp: "",
+        resetLink: resetLink,
+      });
+
+      return res.status(200).json({ message: "Check your email....." });
     }
 
     if (phoneno) {
@@ -317,15 +411,122 @@ export const forgetPassword = async (req, res) => {
           .json({ message: "Please verify your phone number first" });
       }
 
-      // send phone otp
-      // await sendPhoneOtp(user.phoneno);
+      const token = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, {
+        expiresIn: "10m",
+      });
 
-      return res.status(200).json({ message: "OTP sent to phone number" });
+      const resetLink = `https://yourfrontend.com/resetPassword/${token}`;
+
+      await sendSMS({
+        mobile: phoneno,
+        RequestType: "FORGETPASS",
+        username: user?.username,
+        resetLink: resetLink,
+        otp: "",
+        ivrnum: "",
+        ivrid: "",
+      });
+      return res
+        .status(200)
+        .json({ message: "Password reset link sent to your phone number" });
     }
   } catch (error) {
     console.log(error);
     return res
       .status(500)
       .json({ message: "Server error", error: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    const userId = decoded.id;
+    const user = await Userinfo.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const ciphertext = encrypt(newPassword);
+    user.Password = ciphertext;
+    await user.save();
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Invalid or expired token",
+      error: error.message,
+    });
+  }
+};
+
+export const getPassword = async (req, res) => {
+  try {
+    const user = await Userinfo.findById(req.user.id).select("Password");
+    const decryptedPassword = decrypt(user.Password);
+    res.json({ password: decryptedPassword }); //...user.toObject(),
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 2. Check user is active and not deleted
+// if (user.isDeleted) {
+//   return res.status(400).json({ message: "Account is deleted" });
+// }
+
+
+export const createOrResetPin = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { userPin } = req.body;
+
+    // Validate input
+    if (!userPin || userPin.length !== 4) {
+      return res.status(400).json({ message: "User PIN must be 4 digits" });
+    }
+
+    // Fetch user
+    const user = await Userinfo.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check phone/email verification
+    if (!user.isMobVerified && !user.isEmailVerified) {
+      return res.status(400).json({
+        message: "Verify phone or email before creating/resetting PIN",
+      });
+    }
+
+    // User already has a PIN → reset mode
+    if (user.hasloginpin && user.loginpin) {
+      const oldPin = decrypt(user.loginpin);
+
+      if (oldPin === userPin) {
+        return res
+          .status(400)
+          .json({ message: "New PIN cannot be same as old PIN" });
+      }
+
+      user.loginpin = encrypt(userPin);
+      await user.save();
+
+      return res.status(200).json({ message: "PIN reset successfully" });
+    }
+
+    // User has no PIN → create mode
+    user.loginpin = encrypt(userPin);
+    user.hasloginpin = true;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "PIN created successfully",
+    });
+  } catch (error) {
+    console.error("PIN create/reset error:", error);
+    return res.status(500).json({ message: "Server error", error });
   }
 };

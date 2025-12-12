@@ -56,7 +56,7 @@ const UserinfoSchema = new mongoose.Schema(
       ],
     },
     Password: { type: String, trim: true },
-    loginpin: { type: Number },
+    loginpin: { type: String },
     Height: {
       type: String,
       required: [true, "Height is required"],
@@ -181,10 +181,17 @@ const UserinfoSchema = new mongoose.Schema(
 
     // Email otp
     EmailOTP: { type: Number },
-    EmailOTPValidity: {type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000)},
+    EmailOTPValidity: {
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60 * 1000),
+    },
     EmailOTPAttempt: { type: Number, default: 1 },
     isEmailVerified: { type: Boolean, default: false },
-
+    //device id
+    deviceId: {
+      type: String,
+      default: null,
+    },
     iswhatsappenable: { type: Boolean, default: false },
     issmsnotificationon: { type: Boolean, default: false },
     iswhatsappnotificationon: { type: Boolean, default: false },

@@ -6,7 +6,7 @@ export const sendSMS = async (
   mobile,
   RequestType,
   username,
-  password,
+  resetLink,
   otp,
   ivrnum,
   ivrid
@@ -29,11 +29,10 @@ export const sendSMS = async (
       case "FORGETPASS": {
         templateid = process.env.FORGETPASS;
         smsbody =
-          "Forgot Password: Your user ID is " +
+          "Forgot resetLink: Your user ID is " +
           username +
-          " and Password is " +
-          password +
-          " -PAYPAF";
+          " and resetLink reset link is " +
+          resetLink;
         break;
       }
       case "PANELLOGIN": {

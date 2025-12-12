@@ -3,8 +3,12 @@ import {
   register,
   updateuser,
   login,
-  getProfile,
   forgetPassword,
+  resetPassword,
+  getPassword,
+  createOrResetPin,
+  logout,
+
 } from "../controllers/authController.js";
 import { fetchUser } from "../controllers/userOparationController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
@@ -16,12 +20,16 @@ router.post("/register", register);
 router.put("/update", upload.single("image"), authMiddleware, updateuser);
 // router.post("/login", authMiddleware, login);
 router.post("/login", login);
-router.get("/profile", authMiddleware, getProfile);
+router.post("/logout",authMiddleware, logout);
+router.get("/password", authMiddleware, getPassword);
 router.get("/FetchUser", authMiddleware, fetchUser);
 
 
 // Forget Password
 router.post("/forgetPassword", forgetPassword);
+router.post("/resetPassword/:token", resetPassword);
 
+// createOrResetPin
+router.post("/generatePin",authMiddleware,createOrResetPin);
 //module.exports = router;
 export default router;

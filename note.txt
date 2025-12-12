@@ -46,3 +46,21 @@ user register with ph no ->  then if we want to update user password then login 
 page open - ph no- verify- name , pass, email, state city - login 
 if email/ph verify then reset password
 after resgistration process completed then we generate pin
+
+
+11/12/2025
+1. At the time of update the user encrypt the password
+2. In the getPassword route we decrypt the password and return the original password in the response
+3. In the login controller we have to decrypt the password
+4. | Purpose              | Field to Check                       | Why                  |
+| -------------------- | ------------------------------------ | -------------------- |
+| Validate account     | `email` OR `phoneno`                 | To find the user     |
+| Verified identity    | `isMobVerified` OR `isEmailVerified` | For secure PIN login |
+| Ensure no old PIN    | `hasloginpin`, `loginpin`            | Avoid duplicates     |
+| Ensure active status | `isDeleted`, `isActive`              | Only for valid users |
+
+12/12/2025
+1. Reset PIN should be manually not auto generated
+2. Generate and reset should be combined in one function if pin is not present then generate for 1st time but if already present the reset new one
+3.** For PIN based login created one field deviceId a random id and that is stored in the database
+4. 
